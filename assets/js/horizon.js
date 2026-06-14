@@ -41,7 +41,7 @@
     });
   }
 
-  /** Set up EN/中文 language toggle as a page-level control */
+  /** Set up EN/한국어 language toggle as a page-level control */
   function setupLanguageToggle() {
     // Create toggle buttons
     var toggle = document.createElement('div');
@@ -51,42 +51,42 @@
     btnEn.textContent = 'EN';
     btnEn.type = 'button';
 
-    var btnZh = document.createElement('button');
-    btnZh.textContent = '中文';
-    btnZh.type = 'button';
+    var btnKo = document.createElement('button');
+    btnKo.textContent = '한국어';
+    btnKo.type = 'button';
 
     toggle.appendChild(btnEn);
-    toggle.appendChild(btnZh);
+    toggle.appendChild(btnKo);
 
     // Insert at top of body
     document.body.insertBefore(toggle, document.body.firstChild);
 
-    // Read saved preference, default to zh
+    // Read saved preference, default to ko
     var saved = null;
     try { saved = localStorage.getItem('horizon-lang'); } catch (e) { /* noop */ }
-    var currentLang = saved === 'en' ? 'en' : 'zh';
+    var currentLang = saved === 'en' ? 'en' : 'ko';
 
     function updateButtons(lang) {
       if (lang === 'en') {
         btnEn.classList.add('active');
-        btnZh.classList.remove('active');
+        btnKo.classList.remove('active');
       } else {
-        btnZh.classList.add('active');
+        btnKo.classList.add('active');
         btnEn.classList.remove('active');
       }
     }
 
     // Index page: toggle lang-section visibility
-    var zhSection = document.getElementById('lang-zh');
+    var koSection = document.getElementById('lang-ko');
     var enSection = document.getElementById('lang-en');
 
     function showSection(lang) {
-      if (!zhSection || !enSection) return;
+      if (!koSection || !enSection) return;
       if (lang === 'en') {
         enSection.classList.remove('hidden');
-        zhSection.classList.add('hidden');
+        koSection.classList.add('hidden');
       } else {
-        zhSection.classList.remove('hidden');
+        koSection.classList.remove('hidden');
         enSection.classList.add('hidden');
       }
     }
@@ -95,10 +95,10 @@
     function switchArticleLang(lang) {
       var path = window.location.pathname;
       var target = null;
-      if (lang === 'en' && /-zh(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
-        target = path.replace(/-zh(\.html)?$/, '-en$1').replace(/-zh\/$/, '-en/');
-      } else if (lang === 'zh' && /-en(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
-        target = path.replace(/-en(\.html)?$/, '-zh$1').replace(/-en\/$/, '-zh/');
+      if (lang === 'en' && /-ko(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
+        target = path.replace(/-ko(\.html)?$/, '-en$1').replace(/-ko\/$/, '-en/');
+      } else if (lang === 'ko' && /-en(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
+        target = path.replace(/-en(\.html)?$/, '-ko$1').replace(/-en\/$/, '-ko/');
       }
       if (target) window.location.href = target;
     }
@@ -107,7 +107,7 @@
       currentLang = lang;
       updateButtons(lang);
       try { localStorage.setItem('horizon-lang', lang); } catch (e) { /* noop */ }
-      if (zhSection && enSection) {
+      if (koSection && enSection) {
         showSection(lang);
       } else {
         switchArticleLang(lang);
@@ -115,11 +115,11 @@
     }
 
     btnEn.addEventListener('click', function () { setLang('en'); });
-    btnZh.addEventListener('click', function () { setLang('zh'); });
+    btnKo.addEventListener('click', function () { setLang('ko'); });
 
     // Initialize
     updateButtons(currentLang);
-    if (zhSection && enSection) {
+    if (koSection && enSection) {
       showSection(currentLang);
     }
   }
