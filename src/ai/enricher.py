@@ -200,7 +200,7 @@ class ContentEnricher:
             return
 
         # Combine structured sub-fields into per-language detailed_summary
-        for lang in ("en", "zh"):
+        for lang in ("en", "ko"):
             if result.get(f"title_{lang}"):
                 val = result[f"title_{lang}"]
                 item.metadata[f"title_{lang}"] = val.get("text") or str(val) if isinstance(val, dict) else str(val)
@@ -238,22 +238,22 @@ class ContentEnricher:
 
     async def _translate_item(self, item: ContentItem) -> None:
         """Lightweight translation fallback: when full enrichment fails, at least
-        translate the title and summary to Chinese so the item is not dropped."""
+        translate the title and summary to Korean so the item is not dropped."""
         try:
             response = await self.client.complete(
-                system="You are a translator. Translate to Simplified Chinese. Return only valid JSON, no other text.",
+                system="You are a translator. Translate to Korean. Return only valid JSON, no other text.",
                 user=(
                     f'Title: {item.title}\n'
                     f'Summary: {item.ai_summary or item.title}\n\n'
                     'Return JSON:\n'
-                    '{"title_zh": "<中文标题>", "summary_zh": "<用中文写1-2句摘要>"}'
+                    '{"title_ko": "<한국어 제목>", "summary_ko": "<한국어로 1-2문장 요약>"}'
                 ),
             )
             result = self._parse_json_response(response)
             if result:
-                if result.get("title_zh"):
-                    item.metadata["title_zh"] = result["title_zh"]
-                if result.get("summary_zh"):
-                    item.metadata["detailed_summary_zh"] = result["summary_zh"]
+                if result.get("title_ko"):
+                    item.metadata["title_ko"] = result["title_ko"]
+                if result.get("summary_ko"):
+                    item.metadata["detailed_summary_ko"] = result["summary_ko"]
         except Exception:
             pass

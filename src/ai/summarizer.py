@@ -58,6 +58,26 @@ LABELS = {
             "3. 检查 AI 模型是否正常工作\n"
         ),
     },
+    "ko": {
+        "header": "Horizon 일일 브리핑",
+        "source": "출처",
+        "background": "배경 지식",
+        "discussion": "커뮤니티 토론",
+        "references": "참고 링크",
+        "tags": "태그",
+        "selected_items": "{total}개의 콘텐츠 중 {selected}개의 중요한 정보가 선별되었습니다.",
+        "empty_analyzed": "총 {total}개의 콘텐츠를 분석했으나 중요도 임계값을 넘은 항목이 없습니다.",
+        "empty_body": (
+            "오늘의 중요 동향이 없습니다. 원인은 다음과 같을 수 있습니다:\n"
+            "- 모니터링 중인 채널에 새로운 업데이트가 없음\n"
+            "- AI 중요도 스레스홀드(임계값)가 너무 높음\n"
+            "- 정보 수집 채널을 확장해야 할 필요성\n\n"
+            "권장 해결책:\n"
+            "1. config.json에서 `ai_score_threshold` 값을 낮추기\n"
+            "2. 더 다양한 뉴스 및 RSS 채널 추가하기\n"
+            "3. AI 모델 연결 상태 확인하기\n"
+        ),
+    },
 }
 
 
@@ -197,9 +217,11 @@ class DailySummarizer:
         else:
             source_parts.append(item.author or "unknown")
         if item.published_at:
-            if language == "zh":
+            if language in ("zh", "ko"):
+                suffix = "일" if language == "ko" else "日"
+                prefix = "월" if language == "ko" else "月"
                 source_parts.append(
-                    f"{item.published_at.month}月{item.published_at.day}日 "
+                    f"{item.published_at.month}{prefix}{item.published_at.day}{suffix} "
                     f"{item.published_at:%H:%M}"
                 )
             else:
