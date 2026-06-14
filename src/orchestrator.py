@@ -99,6 +99,27 @@ class HorizonOrchestrator:
                     f"→ {len(merged_items)} unique items\n"
                 )
 
+            # 4. Limit the number of items to analyze to prevent API quota depletion
+            max_to_score = self.config.filtering.max_items_to_score
+            if len(merged_items) > max_to_score:
+                def sort_key(item):
+                    # Prioritize items with engagement scores first, then by score value, then by date.
+                    score = item.metadata.get("score")
+                    if score is not None:
+                        try:
+                            val = float(score)
+                            return (1, val, item.published_at.timestamp() if item.published_at else 0)
+                        except (ValueError, TypeError):
+                            pass
+                    return (0, 0.0, item.published_at.timestamp() if item.published_at else 0)
+
+                sorted_for_scoring = sorted(merged_items, key=sort_key, reverse=True)
+                self.console.print(
+                    f"⚠️  Safe Pre-Scoring Guard: Capping items to score from {len(merged_items)} to {max_to_score} "
+                    f"to stay within daily API quota.\n"
+                )
+                merged_items = sorted_for_scoring[:max_to_score]
+
             # 4. Analyze with AI
             analyzed_items = await self._analyze_content(merged_items)
             self.console.print(f"🤖 Analyzed {len(analyzed_items)} items with AI\n")

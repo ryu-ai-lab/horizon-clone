@@ -6,7 +6,7 @@ from typing import List, Dict
 from ..models import ContentItem
 
 
-_CJK = r"[\u4e00-\u9fff\u3400-\u4dbf]"
+_CJK = r"[\u4e00-\u9fff\u3400-\u4dbf\uac00-\ud7a3]"
 _ASCII = r"[A-Za-z0-9]"
 
 
@@ -123,7 +123,7 @@ class DailySummarizer:
         for i, item in enumerate(items):
             _t = item.metadata.get(f"title_{language}") or item.title
             t = str(_t).replace("[", "(").replace("]", ")")
-            if language == "zh":
+            if language in ("zh", "ko"):
                 t = _pangu(t)
             score = item.ai_score or "?"
             toc_entries.append(f"{i + 1}. [{t}](#item-{i + 1}) \u2b50\ufe0f {score}/10")
@@ -161,7 +161,7 @@ class DailySummarizer:
         entries = []
         for i, item in enumerate(items, start=1):
             title = str(item.metadata.get(f"title_{language}") or item.title).replace("[", "(").replace("]", ")")
-            if language == "zh":
+            if language in ("zh", "ko"):
                 title = _pangu(title)
             score = item.ai_score or "?"
             entries.append(f"{i}. [{title}]({item.url}) \u2b50\ufe0f {score}/10")
@@ -201,7 +201,7 @@ class DailySummarizer:
             or ""
         )
 
-        if language == "zh":
+        if language in ("zh", "ko"):
             title = _pangu(title)
             summary = _pangu(summary)
             background = _pangu(background)
