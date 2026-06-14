@@ -1,14 +1,15 @@
 {
   "version": "1.0",
   "ai": {
-    "provider": "openai",
-    "model": "gpt-4",
-    "api_key_env": "OPENAI_API_KEY",
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "api_key_env": "GOOGLE_API_KEY",
     "temperature": 0.3,
     "max_tokens": 4096,
     "throttle_sec": 0,
     "analysis_concurrency": 1,
-    "enrichment_concurrency": 1
+    "enrichment_concurrency": 1,
+    "languages": ["ko"]
   },
   "email": {
     "enabled": false,
@@ -37,8 +38,8 @@
     ],
     "hackernews": {
       "enabled": true,
-      "fetch_top_stories": 20,
-      "min_score": 100
+      "fetch_top_stories": 5,
+      "min_score": 250
     },
     "rss": [
       {
@@ -46,6 +47,24 @@
         "url": "https://simonwillison.net/atom/everything/",
         "enabled": true,
         "category": "ai-tools"
+      },
+      {
+        "name": "OpenAI Newsroom",
+        "url": "https://openai.com/news/rss.xml",
+        "enabled": true,
+        "category": "ai"
+      },
+      {
+        "name": "GitHub Blog",
+        "url": "https://github.blog/feed/",
+        "enabled": true,
+        "category": "software-engineering"
+      },
+      {
+        "name": "The Verge Tech",
+        "url": "https://www.theverge.com/rss/tech/index.xml",
+        "enabled": false,
+        "category": "tech"
       },
       {
         "name": "LWN.net (subscriber full-text)",
@@ -62,8 +81,8 @@
           "enabled": true,
           "sort": "hot",
           "time_filter": "day",
-          "fetch_limit": 15,
-          "min_score": 50
+          "fetch_limit": 5,
+          "min_score": 150
         }
       ],
       "users": [
@@ -78,7 +97,10 @@
     },
     "twitter": {
       "enabled": false,
-      "users": ["karpathy", "ylecun"],
+      "users": [
+        "karpathy",
+        "ylecun"
+      ],
       "fetch_limit": 10,
       "fetch_reply_text": false,
       "max_replies_per_tweet": 3,
@@ -96,14 +118,26 @@
           "provider": "yfinance",
           "fetch_limit": 20,
           "category": "equities",
-          "symbols": ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA"]
+          "symbols": [
+            "AAPL",
+            "MSFT",
+            "NVDA",
+            "GOOGL",
+            "AMZN",
+            "META",
+            "TSLA"
+          ]
         }
       ]
     },
     "ossinsight": {
       "enabled": false,
       "period": "past_24_hours",
-      "languages": ["All", "Python", "TypeScript"],
+      "languages": [
+        "All",
+        "Python",
+        "TypeScript"
+      ],
       "keywords": [],
       "min_stars": 10,
       "max_items": 30
@@ -144,7 +178,7 @@
           "elements": [
             {
               "tag": "markdown",
-              "content": "Horizon生成结果: #{result}\nHorizon日报重要资讯数量: #{important_items}/#{all_items}"
+              "content": "Horizon 결과: #{result}\nHorizon 중요 뉴스 개수: #{important_items}/#{all_items}"
             },
             {
               "tag": "hr"
