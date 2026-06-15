@@ -132,13 +132,28 @@ class HorizonOrchestrator:
             analyzed_items = await self._analyze_content(merged_items)
             self.console.print(f"🤖 Analyzed {len(analyzed_items)} items with AI\n")
 
-            # 5. Filter by score threshold
+            # 5. Filter by score threshold (ensuring at least 1 item per source type if available)
             threshold = self.config.filtering.ai_score_threshold
-            important_items = [
-                item for item in analyzed_items
-                if item.ai_score and item.ai_score >= threshold
-            ]
-            important_items.sort(key=lambda x: x.ai_score or 0, reverse=True)
+            
+            # Group analyzed items by source type
+            items_by_source = defaultdict(list)
+            for item in analyzed_items:
+                items_by_source[item.source_type].append(item)
+            
+            important_items = []
+            for src_type, src_items in items_by_source.items():
+                if not src_items:
+                    continue
+                # Sort items of this source type by score descending
+                sorted_src_items = sorted(src_items, key=lambda x: x.ai_score or 0.0, reverse=True)
+                # Keep the top item from each source type unconditionally
+                important_items.append(sorted_src_items[0])
+                # Keep other items of this source type only if they meet the threshold
+                for item in sorted_src_items[1:]:
+                    if item.ai_score and item.ai_score >= threshold:
+                        important_items.append(item)
+            
+            important_items.sort(key=lambda x: x.ai_score or 0.0, reverse=True)
 
             self.console.print(
                 f"⭐️ {len(important_items)} items scored ≥ {threshold}\n"

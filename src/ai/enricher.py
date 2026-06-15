@@ -200,7 +200,17 @@ class ContentEnricher:
             return
 
         # Combine structured sub-fields into per-language detailed_summary
+        is_english = not bool(re.search(r"[\u4e00-\u9fff\u3400-\u4dbf\uac00-\ud7a3]", item.title))
+
         for lang in ("en", "ko"):
+            if is_english and lang == "ko":
+                # Copy English version instead of translating
+                item.metadata["title_ko"] = item.metadata.get("title_en", item.title)
+                item.metadata["detailed_summary_ko"] = item.metadata.get("detailed_summary_en", "")
+                item.metadata["background_ko"] = item.metadata.get("background_en", "")
+                item.metadata["community_discussion_ko"] = item.metadata.get("community_discussion_en", "")
+                continue
+
             if result.get(f"title_{lang}"):
                 val = result[f"title_{lang}"]
                 item.metadata[f"title_{lang}"] = val.get("text") or str(val) if isinstance(val, dict) else str(val)
@@ -239,6 +249,12 @@ class ContentEnricher:
     async def _translate_item(self, item: ContentItem) -> None:
         """Lightweight translation fallback: when full enrichment fails, at least
         translate the title and summary to Korean so the item is not dropped."""
+        is_english = not bool(re.search(r"[\u4e00-\u9fff\u3400-\u4dbf\uac00-\ud7a3]", item.title))
+        if is_english:
+            item.metadata["title_ko"] = item.title
+            item.metadata["detailed_summary_ko"] = item.ai_summary or item.title
+            return
+
         try:
             response = await self.client.complete(
                 system="You are a translator. Translate to Korean. Return only valid JSON, no other text.",
