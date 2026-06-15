@@ -63,18 +63,18 @@ def test_success_on_first_provider():
 
 
 def test_fallback_on_empty_response():
-    """When first provider returns empty/whitespace, fallback to second."""
+    """When first provider returns empty/whitespace, do NOT fallback (raise ValueError)."""
     cfg1 = _make_config(AIProvider.OPENAI)
     cfg2 = _make_config(AIProvider.OLLAMA)
     client1 = _DummyClient(result="   ")
     client2 = _DummyClient(result="fallback ok")
 
     chained = ChainedAIClient([cfg1, cfg2], clients=[client1, client2])
-    result = asyncio.run(chained.complete("sys", "usr"))
+    with pytest.raises(ValueError, match="Empty response from provider"):
+        asyncio.run(chained.complete("sys", "usr"))
 
-    assert result == "fallback ok"
     assert len(client1.calls) == 1
-    assert len(client2.calls) == 1
+    assert len(client2.calls) == 0
 
 
 def test_fallback_on_rate_limit():
@@ -110,7 +110,7 @@ def test_all_providers_fail():
     cfg1 = _make_config(AIProvider.OPENAI)
     cfg2 = _make_config(AIProvider.OLLAMA)
     client1 = _DummyClient(exc=Exception("429 rate limit"))
-    client2 = _DummyClient(exc=Exception("503 service unavailable"))
+    client2 = _DummyClient(exc=Exception("quota exceeded"))
 
     chained = ChainedAIClient([cfg1, cfg2], clients=[client1, client2])
     with pytest.raises(RuntimeError, match="All providers failed"):
@@ -134,12 +134,13 @@ def test_no_fallback_on_unexpected_error():
 def test_should_fallback_detects_retryable_errors():
     """_should_fallback correctly identifies retryable errors."""
     assert ChainedAIClient._should_fallback(Exception("429 rate limit")) is True
-    assert ChainedAIClient._should_fallback(Exception("401 unauthorized")) is True
-    assert ChainedAIClient._should_fallback(Exception("403 forbidden")) is True
+    assert ChainedAIClient._should_fallback(Exception("RESOURCE_EXHAUSTED")) is True
     assert ChainedAIClient._should_fallback(Exception("quota exceeded")) is True
-    assert ChainedAIClient._should_fallback(Exception("502 bad gateway")) is True
-    assert ChainedAIClient._should_fallback(Exception("503 service unavailable")) is True
-    assert ChainedAIClient._should_fallback(Exception("Empty response from provider")) is True
+    assert ChainedAIClient._should_fallback(Exception("401 unauthorized")) is False
+    assert ChainedAIClient._should_fallback(Exception("403 forbidden")) is False
+    assert ChainedAIClient._should_fallback(Exception("502 bad gateway")) is False
+    assert ChainedAIClient._should_fallback(Exception("503 service unavailable")) is False
+    assert ChainedAIClient._should_fallback(Exception("Empty response from provider")) is False
     assert ChainedAIClient._should_fallback(Exception("some random error")) is False
 
 

@@ -554,22 +554,19 @@ class ChainedAIClient(AIClient):
                 last_error = exc
                 if i < len(self.configs) - 1:
                     rich_print(
-                        f"\n[yellow]Provider {self.configs[i].provider.value} failed ({exc}), "
-                        f"falling back to {self.configs[i + 1].provider.value}...[/yellow]"
+                        f"\n[yellow]Provider {self.configs[i].provider.value} ({self.configs[i].model}) failed ({exc}), "
+                        f"falling back to {self.configs[i + 1].provider.value} ({self.configs[i + 1].model})...[/yellow]"
                     )
         raise RuntimeError(f"All providers failed. Last error: {last_error}")
 
     @staticmethod
     def _should_fallback(exc: Exception) -> bool:
-        """Determine if an error warrants fallback to the next provider."""
+        """Determine if an error warrants fallback to the next provider/model.
+
+        Strictly triggers fallback ONLY on HTTP 429, RESOURCE_EXHAUSTED, or quota limits exceeded.
+        """
         msg = str(exc).lower()
-        if "429" in msg or "rate limit" in msg:
-            return True
-        if "401" in msg or "403" in msg or "quota" in msg or "exceeded" in msg:
-            return True
-        if "502" in msg or "503" in msg or "service unavailable" in msg:
-            return True
-        if "empty response" in msg:
+        if "429" in msg or "resource_exhausted" in msg or "quota" in msg or "rate limit" in msg or "exceeded" in msg:
             return True
         return False
 
@@ -604,6 +601,30 @@ def _create_chained_client(config: AIConfig) -> ChainedAIClient:
     return ChainedAIClient(chain_configs)
 
 
+def _create_model_chained_client(config: AIConfig) -> ChainedAIClient:
+    """Build a ChainedAIClient from a comma-separated model list for the same provider."""
+    model_names = [m.strip() for m in config.model.split(",") if m.strip()]
+    if not model_names:
+        raise ValueError("model list is empty")
+
+    chain_configs: List[AIConfig] = []
+    for name in model_names:
+        cfg = AIConfig(
+            provider=config.provider,
+            model=name,
+            api_key_env=config.api_key_env,
+            base_url=config.base_url,
+            temperature=config.temperature,
+            max_tokens=config.max_tokens,
+            languages=config.languages,
+            azure_endpoint_env=config.azure_endpoint_env,
+            api_version=config.api_version,
+        )
+        chain_configs.append(cfg)
+
+    return ChainedAIClient(chain_configs)
+
+
 def create_ai_client(config: AIConfig) -> AIClient:
     """Factory function to create appropriate AI client.
 
@@ -618,4 +639,6 @@ def create_ai_client(config: AIConfig) -> AIClient:
     """
     if config.provider_chain:
         return _create_chained_client(config)
+    if "," in config.model:
+        return _create_model_chained_client(config)
     return _create_single_client(config)

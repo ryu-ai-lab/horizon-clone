@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import httpx
 from rich.console import Console
 
-from .models import Config, ContentItem
+from .models import Config, ContentItem, SourceType
 from .storage.manager import StorageManager
 from .services.email import EmailManager
 from .services.webhook import WebhookNotifier
@@ -103,15 +103,23 @@ class HorizonOrchestrator:
             max_to_score = self.config.filtering.max_items_to_score
             if len(merged_items) > max_to_score:
                 def sort_key(item):
+                    # Curated RSS feed items: high default engagement score
+                    if item.source_type == SourceType.RSS:
+                        return (1, 100.0, item.published_at.timestamp() if item.published_at else 0.0)
+
+                    # GitHub releases/events: high default engagement score
+                    if item.source_type == SourceType.GITHUB:
+                        return (1, 150.0, item.published_at.timestamp() if item.published_at else 0.0)
+
                     # Prioritize items with engagement scores first, then by score value, then by date.
                     score = item.metadata.get("score")
                     if score is not None:
                         try:
                             val = float(score)
-                            return (1, val, item.published_at.timestamp() if item.published_at else 0)
+                            return (1, val, item.published_at.timestamp() if item.published_at else 0.0)
                         except (ValueError, TypeError):
                             pass
-                    return (0, 0.0, item.published_at.timestamp() if item.published_at else 0)
+                    return (0, 0.0, item.published_at.timestamp() if item.published_at else 0.0)
 
                 sorted_for_scoring = sorted(merged_items, key=sort_key, reverse=True)
                 self.console.print(
