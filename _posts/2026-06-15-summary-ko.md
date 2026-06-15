@@ -5,21 +5,14 @@ date: 2026-06-15
 lang: ko
 ---
 
-> 37개의 콘텐츠 중 1개의 중요한 정보가 선별되었습니다.
+> 총 13개의 콘텐츠를 분석했으나 중요도 임계값을 넘은 항목이 없습니다.
 
----
+오늘의 중요 동향이 없습니다. 원인은 다음과 같을 수 있습니다:
+- 모니터링 중인 채널에 새로운 업데이트가 없음
+- AI 중요도 스레스홀드(임계값)가 너무 높음
+- 정보 수집 채널을 확장해야 할 필요성
 
-1. [Show HN: Kage – Shadow any website to a single binary for offline viewing](#item-1) ⭐️ 8.0/10
-
----
-
-<a id="item-1"></a>
-## [Show HN: Kage – Shadow any website to a single binary for offline viewing](https://github.com/tamnd/kage) ⭐️ 8.0/10
-
-Kage is a new tool that allows users to package any website into a single binary for offline viewing, generating significant community interest and discussion on its utility and implementation.
-
-hackernews · tamnd · 6월14일 17:25 · [커뮤니티 토론](https://news.ycombinator.com/item?id=48529990)
-
-**태그**: `#Web Development`, `#Offline Access`, `#Developer Tools`, `#Archiving`, `#Utilities`
-
----
+권장 해결책:
+1. config.json에서 `ai_score_threshold` 값을 낮추기
+2. 더 다양한 뉴스 및 RSS 채널 추가하기
+3. AI 모델 연결 상태 확인하기
