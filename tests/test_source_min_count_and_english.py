@@ -17,7 +17,7 @@ def make_item(item_id: str, source_type: SourceType, score: float) -> ContentIte
         ai_score=score,
     )
 
-def test_preserve_at_least_one_item_per_source_type(tmp_path, monkeypatch):
+def test_filtering_removes_below_threshold_items_when_above_threshold_items_exist(tmp_path, monkeypatch):
     config = Config(
         ai=AIConfig(
             provider="openai",
@@ -48,7 +48,6 @@ def test_preserve_at_least_one_item_per_source_type(tmp_path, monkeypatch):
         make_item("github-low", SourceType.GITHUB, 6.0),
     ]
     
-    # Mock orchestrator methods to verify how run() filters them
     important_items_passed = []
     
     async def fetch_all_sources(since):
@@ -73,7 +72,6 @@ def test_preserve_at_least_one_item_per_source_type(tmp_path, monkeypatch):
     monkeypatch.setattr(orchestrator, "_enrich_important_items", enrich_important_items)
     monkeypatch.chdir(tmp_path)
     
-    # Monkeypatch DailySummarizer to avoid file saves and webhooks
     class DummySummarizer:
         async def generate_summary(self, *args, **kwargs):
             return "dummy summary"
@@ -81,18 +79,85 @@ def test_preserve_at_least_one_item_per_source_type(tmp_path, monkeypatch):
     
     asyncio.run(orchestrator.run())
     
-    # We expect:
-    # - "rss-high" (above threshold) -> Kept
-    # - "rss-low" (below threshold, not the top RSS) -> Filtered out
-    # - "reddit-low-1" (below threshold, but top Reddit) -> Kept
-    # - "reddit-low-2" (below threshold, not the top Reddit) -> Filtered out
-    # - "github-low" (below threshold, but top GitHub) -> Kept
-    
     kept_ids = [item.id for item in important_items_passed]
     assert "rss-high" in kept_ids
+    assert "reddit-low-1" not in kept_ids
+    assert "github-low" not in kept_ids
+    assert "rss-low" not in kept_ids
+    assert len(kept_ids) == 1
+
+
+def test_fallback_keeps_top_item_per_source_type_when_all_below_threshold(tmp_path, monkeypatch):
+    config = Config(
+        ai=AIConfig(
+            provider="openai",
+            model="test",
+            api_key_env="TEST_API_KEY",
+            languages=[],
+        ),
+        sources=SourcesConfig(),
+        filtering=FilteringConfig(
+            ai_score_threshold=7.0,
+            max_items=10,
+        ),
+    )
+    
+    from types import SimpleNamespace
+    storage = SimpleNamespace(
+        save_daily_summary=lambda *args, **kwargs: "dummy_path",
+        load_subscribers=lambda *args, **kwargs: [],
+    )
+    orchestrator = HorizonOrchestrator(config, storage)
+    
+    # All items are below the threshold of 7.0
+    items = [
+        make_item("rss-low-1", SourceType.RSS, 6.0),
+        make_item("rss-low-2", SourceType.RSS, 4.0),
+        make_item("reddit-low-1", SourceType.REDDIT, 5.0),
+        make_item("reddit-low-2", SourceType.REDDIT, 3.0),
+        make_item("github-low", SourceType.GITHUB, 6.5),
+    ]
+    
+    important_items_passed = []
+    
+    async def fetch_all_sources(since):
+        return items
+        
+    async def analyze_content(input_items):
+        return input_items
+        
+    async def merge_topic_duplicates(input_items):
+        return input_items
+        
+    async def expand_twitter_discussion(input_items):
+        return None
+        
+    async def enrich_important_items(input_items):
+        important_items_passed.extend(input_items)
+        
+    monkeypatch.setattr(orchestrator, "fetch_all_sources", fetch_all_sources)
+    monkeypatch.setattr(orchestrator, "_analyze_content", analyze_content)
+    monkeypatch.setattr(orchestrator, "merge_topic_duplicates", merge_topic_duplicates)
+    monkeypatch.setattr(orchestrator, "_expand_twitter_discussion", expand_twitter_discussion)
+    monkeypatch.setattr(orchestrator, "_enrich_important_items", enrich_important_items)
+    monkeypatch.chdir(tmp_path)
+    
+    class DummySummarizer:
+        async def generate_summary(self, *args, **kwargs):
+            return "dummy summary"
+    monkeypatch.setattr("src.orchestrator.DailySummarizer", DummySummarizer)
+    
+    asyncio.run(orchestrator.run())
+    
+    kept_ids = [item.id for item in important_items_passed]
+    # We expect the top item from each source type as a fallback:
+    # - RSS: "rss-low-1" (6.0)
+    # - REDDIT: "reddit-low-1" (5.0)
+    # - GITHUB: "github-low" (6.5)
+    assert "rss-low-1" in kept_ids
     assert "reddit-low-1" in kept_ids
     assert "github-low" in kept_ids
-    assert "rss-low" not in kept_ids
+    assert "rss-low-2" not in kept_ids
     assert "reddit-low-2" not in kept_ids
     assert len(kept_ids) == 3
 

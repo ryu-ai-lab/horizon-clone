@@ -331,6 +331,19 @@ class HorizonPipelineService:
         effective_threshold = threshold if threshold is not None else ctx.config.filtering.ai_score_threshold
 
         important_items = [item for item in items if item.ai_score and item.ai_score >= effective_threshold]
+        
+        # Fallback: if no items meet the threshold, keep the top item from each source type
+        if not important_items and items:
+            from collections import defaultdict
+            items_by_source = defaultdict(list)
+            for item in items:
+                items_by_source[item.source_type].append(item)
+            
+            for src_type, src_items in items_by_source.items():
+                if src_items:
+                    sorted_src_items = sorted(src_items, key=lambda x: x.ai_score or 0.0, reverse=True)
+                    important_items.append(sorted_src_items[0])
+
         important_items.sort(key=lambda x: x.ai_score or 0, reverse=True)
 
         before_dedup = len(important_items)
