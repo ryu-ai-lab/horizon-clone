@@ -38,8 +38,8 @@
     ],
     "hackernews": {
       "enabled": true,
-      "fetch_top_stories": 5,
-      "min_score": 250
+      "fetch_top_stories": 15,
+      "min_score": 120
     },
     "rss": [
       {
@@ -63,7 +63,7 @@
       {
         "name": "The Verge Tech",
         "url": "https://www.theverge.com/rss/tech/index.xml",
-        "enabled": false,
+        "enabled": true,
         "category": "tech"
       },
       {
@@ -81,8 +81,8 @@
           "enabled": true,
           "sort": "hot",
           "time_filter": "day",
-          "fetch_limit": 5,
-          "min_score": 150
+          "fetch_limit": 15,
+          "min_score": 50
         }
       ],
       "users": [
@@ -146,6 +146,7 @@
   "filtering": {
     "ai_score_threshold": 6.0,
     "time_window_hours": 24,
+    "max_items_to_score": 12,
     "max_items": null,
     "category_groups": {},
     "default_group": "other",
