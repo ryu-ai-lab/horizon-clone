@@ -92,7 +92,7 @@
     }
 
     // Article page: redirect to the other language version
-    function switchArticleLang(lang) {
+    function switchArticleLang(lang, rollback) {
       var path = window.location.pathname;
       var target = null;
       if (lang === 'en' && /-ko(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
@@ -100,17 +100,36 @@
       } else if (lang === 'ko' && /-en(?:\.html)?$/.test(path.replace(/\/$/, ''))) {
         target = path.replace(/-en(\.html)?$/, '-ko$1').replace(/-en\/$/, '-ko/');
       }
-      if (target) window.location.href = target;
+      if (target) {
+        fetch(target, { method: 'HEAD' })
+          .then(function (res) {
+            if (res.ok) {
+              window.location.href = target;
+            } else {
+              alert(lang === 'en' ? 'English version is not available for this post.' : '한국어 버전이 존재하지 않는 게시글입니다.');
+              if (rollback) rollback();
+            }
+          })
+          .catch(function () {
+            // Fallback for environments where fetch fails (e.g. CORS or file://)
+            window.location.href = target;
+          });
+      }
     }
 
     function setLang(lang) {
+      var prevLang = currentLang;
       currentLang = lang;
       updateButtons(lang);
       try { localStorage.setItem('horizon-lang', lang); } catch (e) { /* noop */ }
       if (koSection && enSection) {
         showSection(lang);
       } else {
-        switchArticleLang(lang);
+        switchArticleLang(lang, function () {
+          currentLang = prevLang;
+          updateButtons(prevLang);
+          try { localStorage.setItem('horizon-lang', prevLang); } catch (e) { /* noop */ }
+        });
       }
     }
 
