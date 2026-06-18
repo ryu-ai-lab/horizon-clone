@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Horizon Summary: 2026-06-17 (KO)"
+title: "Horizon Summary: 2026-06-17"
 date: 2026-06-17
 lang: ko
 ---
